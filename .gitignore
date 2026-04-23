@@ -1,0 +1,40 @@
+AI_Discussion_prompts.md
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual Environments
+.env
+.venv/
+venv/
+ENV/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/secrets.toml
+streamlit_cache/
+
+# Data, Outputs & Uploads (keep local)
+*.xlsx
+*.xls
+*.csv
+*.log
+outputs/
+uploads/
+mpr_data/
+temp_*/
