@@ -4,8 +4,8 @@ import traceback
 import pandas as pd
 import streamlit as st
 
-from config import STATES_UTS, USERS, get_ratio
-from mpr_loader import get_projects_for_state, load_mpr_data
+from config import USERS, get_ratio, get_canonical_states
+from mpr_loader import load_mpr_data
 
 # Page configuration
 st.set_page_config(
@@ -85,7 +85,7 @@ def admin_dashboard():
     st.subheader("🛡️ Admin Dashboard")
     try:
         st.info("✅ System Status: Active")
-        st.markdown(f"📊 Loaded {len(STATES_UTS)} States/UTs from config.")
+        st.markdown(f"📊 Loaded {len(get_canonical_states())} States/UTs from config.")
         st.markdown(
             "*(Admin features: MPR management, audit logs, ratio updates → P3)*"
         )
@@ -105,8 +105,8 @@ def consultant_workspace():
     if "mpr_data" not in st.session_state or st.session_state.mpr_data is None:
         with st.spinner("🔄 Loading MPR data..."):
             mpr_df = load_mpr_data()
-            
-            print("mpr data loaded? ",mpr_df.head(1).to_dict(orient='records'))
+
+            print("mpr data loaded? ", mpr_df.head(1).to_dict(orient="records"))
             if mpr_df is not None:
                 st.session_state.mpr_data = mpr_df
                 st.session_state.mpr_ready = True
@@ -119,35 +119,40 @@ def consultant_workspace():
         st.session_state.mpr_ready = True
 
     # State/UT Selector
-    state = st.selectbox("📍 Select State/UT", STATES_UTS, index=0)
+    canonical_states = get_canonical_states()
+    selected_state = st.selectbox("📍 Select State/UT", canonical_states, index=0)
 
-    # Show project count for transparency
+    # 2. Filter using the pre-computed 'state_canonical' column
     if st.session_state.mpr_ready:
-        project_count = len(get_projects_for_state(st.session_state.mpr_data, state))
-        st.caption(f"📊 {project_count} projects found for {state} in latest MPR")
+        df = st.session_state.mpr_data
+        # Filter where the normalized column matches the selected canonical name
+        filtered_df = df[df["state_canonical"] == selected_state]
+        project_count = len(filtered_df)
+        st.caption(f"📊 {project_count} projects found for {selected_state}")
 
     st.markdown("---")
 
     # Action Buttons (only enabled if MPR loaded)
     col1, col2 = st.columns(2)
-    
+
     with col1:
-        if st.button("📥 Download UC Template", use_container_width=True, disabled=not st.session_state.mpr_ready):
+        if st.button(
+            "📥 Download UC Template",
+            use_container_width=True,
+            disabled=not st.session_state.mpr_ready,
+        ):
             if st.session_state.mpr_ready:
                 with st.spinner("🔄 Generating UC template..."):
                     # Import here to avoid circular imports
                     from template_generator import generate_uc_template_bytes
-                    
-                    excel_bytes = generate_uc_template_bytes(
-                        st.session_state.mpr_data, 
-                        state
-                    )
-                    
+
+                    excel_bytes = generate_uc_template_bytes(st.session_state.mpr_data, selected_state)
+
                     if excel_bytes:
                         # Create safe filename
-                        safe_state = state.replace(" ", "_").replace("/", "_")
+                        safe_state = selected_state.replace(" ", "_").replace("/", "_")
                         filename = f"UC_Template_{safe_state}_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx"
-                        
+
                         st.download_button(
                             label="✅ Click to Download UC Template",
                             data=excel_bytes,
@@ -155,14 +160,22 @@ def consultant_workspace():
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             use_container_width=True,
                         )
-                        st.success("📥 Template ready! Fill the blank UC fields offline and upload for validation.")
+                        st.success(
+                            "📥 Template ready! Fill the blank UC fields offline and upload for validation."
+                        )
                     else:
-                        st.warning(f"⚠️ No projects found for {state} in MPR. Cannot generate template.")
+                        st.warning(
+                            f"⚠️ No projects found for {selected_state} in MPR. Cannot generate template."
+                        )
             else:
                 st.warning("⚠️ Please wait for MPR to load")
-    
+
     with col2:
-        if st.button("📤 Upload Filled UC", use_container_width=True, disabled=not st.session_state.mpr_ready):
+        if st.button(
+            "📤 Upload Filled UC",
+            use_container_width=True,
+            disabled=not st.session_state.mpr_ready,
+        ):
             st.info("🔹 Upload & validation logic will be implemented in P2.3")
 
     # Helper note

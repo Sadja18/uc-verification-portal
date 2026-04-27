@@ -12,11 +12,7 @@ CS_SS_RATIOS = {
         "MMER": (100, 0),
         "Other": (60, 40),
     },
-    "Arunachal Pradesh": {
-        "Other": (90, 10),
-        "MMER": (100, 0),
-        "EMDC": (50, 50),
-    },
+    
     "Assam": {
         "Other": (90, 10),
         "MMER": (100, 0),
@@ -174,74 +170,3 @@ def get_ratio(state: str, component: str) -> tuple[int, int]:
     except Exception:
         # Graceful fallback if config is malformed
         return (60, 40)
-
-
-STATE_VARIANTS = {
-    "Andaman and Nicobar Islands": ["andaman and nicobar islands"],
-    "Andhra Pradesh": ["andhra pradesh"],
-    "Arunachal Pradesh": ["arunachal pradesh"],
-    "Assam": ["assam"],
-    "Bihar": ["bihar"],
-    "Chandigarh": ["chandigarh"],
-    "Chhattisgarh": ["chhattisgarh"],
-    "Delhi": ["delhi", "nct of delhi"],
-    "Dadra and Nagar Haveli and Daman and Diu": [
-        "dadra and nagar haveli and daman and diu",
-        "the dadra and nagar haveli and daman and diu",
-        "dadra & nagar haveli",
-        "dadra and nagar haveli",
-        "daman and diu",
-        "dnhdd",
-    ],
-    "Goa": ["goa"],
-    "Gujarat": ["gujarat"],
-    "Haryana": ["haryana"],
-    "Himachal Pradesh": ["himachal pradesh"],
-    "Jammu and Kashmir": ["jammu and kashmir", "j&k", "j and k"],
-    "Jharkhand": ["jharkhand"],
-    "Karnataka": ["karnataka"],
-    "Kerala": ["kerala"],
-    "Ladakh": ["ladakh"],
-    "Madhya Pradesh": ["madhya pradesh"],
-    "Maharashtra": ["maharashtra"],
-    "Manipur": ["manipur"],
-    "Meghalaya": ["meghalaya"],
-    "Mizoram": ["mizoram"],
-    "Nagaland": ["nagaland"],
-    "Odisha": ["odisha", "orissa"],
-    "Puducherry": ["puducherry", "pondicherry"],
-    "Punjab": ["punjab"],
-    "Rajasthan": ["rajasthan"],
-    "Sikkim": ["sikkim"],
-    "Tamil Nadu": ["tamil nadu"],
-    "Telangana": ["telangana"],
-    "Tripura": ["tripura"],
-    "Uttar Pradesh": ["uttar pradesh"],
-    "Uttarakhand": ["uttarakhand"],
-    "West Bengal": ["west bengal"],
-}
-
-
-# Helper: Get list of Canonical States for Dropdown
-def get_canonical_states():
-    return sorted(list(STATE_VARIANTS.keys()))
-
-
-# Helper: Normalize a raw state name to Canonical
-def normalize_state_name(raw_name: str) -> str:
-    if not raw_name:
-        return ""
-    clean_name = str(raw_name).strip().lower().replace("&", "and")
-
-    for canonical, variants in STATE_VARIANTS.items():
-        if clean_name in [v.lower() for v in variants]:
-            return canonical
-
-    # Fallback: If no match, return title-cased raw name
-    # (This handles new/unmapped states gracefully)
-    return str(raw_name).strip().title()
-
-
-# Helper: Get list of raw variants for a canonical state (for filtering)
-def get_state_variants(canonical_name: str) -> list[str]:
-    return STATE_VARIANTS.get(canonical_name, [canonical_name.lower()])

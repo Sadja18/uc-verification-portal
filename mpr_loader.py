@@ -9,6 +9,8 @@ from typing import List, Optional, Tuple
 import pandas as pd
 import streamlit as st
 
+from config import normalize_state_name
+
 # =============================================================================
 # CONFIG: Expected MPR Columns (based on README)
 # =============================================================================
@@ -68,6 +70,12 @@ def _process_mpr_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     col_mapping = {col: normalize_column_name(col) for col in df.columns}
     df = df.rename(columns=col_mapping)
 
+    # 2. Normalize State Names into a new column 'state_canonical'
+    # Determine source column
+    source_col = "state_ut" if "state_ut" in df.columns else "state"
+    if source_col in df.columns:
+        df["state_canonical"] = df[source_col].apply(normalize_state_name)
+
     # Convert amount columns to Decimal (zero float drift)
     amount_cols = [normalize_column_name(c) for c in MPR_AMOUNT_COLS]
     for col in amount_cols:
@@ -120,17 +128,3 @@ def load_mpr_data() -> Optional[pd.DataFrame]:
     except Exception as e:
         st.error(f"⚠️ Failed to load MPR: {str(e)}")
         return None
-
-
-# =============================================================================
-# Utility: Filter MPR by State/UT (for template generation in P2.2)
-# =============================================================================
-
-
-def get_projects_for_state(mpr_df: pd.DataFrame, state: str) -> pd.DataFrame:
-    """Return subset of MPR for given State/UT (case-insensitive match)"""
-    if mpr_df is None or "state" not in mpr_df.columns:
-        return pd.DataFrame()
-
-    # Case-insensitive match on state column
-    return mpr_df[mpr_df["state"].str.lower() == state.lower()].copy()
