@@ -208,3 +208,46 @@ However, as you can see, the cols and name are slightly different in the two exc
 
 Therefore, the mpr loader would first need to load the two excel as separate dfs, do state name canonical process on both dfs, then ensure that the required columns in both dfs are similar so that pd.concat can happen, then combine dfs to single df
 
+---
+
+Since we have the core logic (Verification Engine and Template Generator) and the roadmap finalized, we can now move into the **Integration Phase**. This sprint plan focuses on building the Flask "scaffolding"—the structure that holds the database, the user roles, and the service routes together.
+
+---
+
+### **Sprint 5: Core Scaffolding & Integration**
+
+**Goal**: Establish the Flask environment, define the SQLite/SQLAlchemy models, and implement the "Gatekeeper" logic to prevent duplicate validations.
+
+#### **Phase 1: Environment & Extension Setup**
+*   **App Factory Pattern**: Initialize the Flask application using `create_app()` to handle extensions (SQLAlchemy, Flask-Login, Migrate) and Blueprints cleanly.
+*   **Directory Mapping**: Create a startup utility to ensure `data/master`, `data/temp`, `data/verified`, and `data/review` exist on the PythonAnywhere file system.
+*   **Database Config**: Configure the `SQLALCHEMY_DATABASE_URI` for a local `.db` file and initialize the engine.
+
+#### **Phase 2: User Management & CLI**
+*   **User Model Implementation**: Create the model with `username`, `password_hash`, `role`, and the optional fields (`email`, `first_name`, `last_name`).
+*   **RBAC Decorators**: Build custom Python decorators (e.g., `@admin_required`) to protect specific routes like "Global Export."
+*   **Flask CLI Commands**: Develop custom terminal commands:
+    *   `flask init-db`: Creates tables and default folders.
+    *   `flask create-user`: A prompted utility to add consultants or IT managers without SQL.
+
+#### **Phase 3: The "Gatekeeper" Blueprint (Verifier Integration)**
+*   **Route Logic**: Create the `/upload` route that accepts the consultant's file.
+*   **Duplicate Detection**: Before calling the service, query the `ValidationLog` table for a `Success` status matching the file's `State` and `Phase`.
+*   **Service Integration**:
+    *   If no duplicate exists, pass the file to the `VerificationEngine`.
+    *   On success, write to the `ValidationLog` and append the results to the `VerifiedRecords` table.
+    *   On failure, serve the **Locked Discrepancy Annexure**[cite: 1].
+
+#### **Phase 4: Template & Global Export Blueprints**
+*   **Template Route**: Integrate `generate_consultant_template` into a route that serves the file as a `BytesIO` object or a direct download.
+*   **The "IT Manager" Export**: Create the admin-only route that queries `VerifiedRecords`, converts it to a DataFrame, and exports the **Global Master** spreadsheet.
+
+---
+
+### **Deliverables Checklist**
+| Component | Function |
+| :--- | :--- |
+| **`models.py`** | SQLite schema for Users, Logs, and Global Records. |
+| **`commands.py`** | CLI tools for user management and DB setup. |
+| **`auth` Blueprint** | Login/Logout and session protection. |
+| **`verifier` Blueprint** | Upload handling, duplicate checking, and database "Commit" logic. |
