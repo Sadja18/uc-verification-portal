@@ -38,7 +38,7 @@ CS_SS_RATIOS = {
         "Other": (100, 0),
         "MMER": (100, 0),
     },
-    "The Dadra and Nagar Haveli and Daman and Diu": {
+    "Dadra and Nagar Haveli and Daman and Diu": {
         "Other": (100, 0),
         "MMER": (100, 0),
     },
@@ -53,6 +53,10 @@ CS_SS_RATIOS = {
     },
     "Haryana": {
         "Other": (60, 40),
+    },
+    "Himachal Pradesh":{
+        "Other":(60,40),
+        "MMER": (100,0)
     },
     "Jammu and Kashmir": {
         "Other": (90, 10),
@@ -166,11 +170,34 @@ SCHEMES = ["RUSA 1", "RUSA 2", "PM-USHA"]
 def get_ratio(state: str, component: str) -> tuple[int, int]:
     """
     Returns (central_ratio, state_ratio) for given state+component.
-    Fallback order: exact component → "Other" → default (60,40)
+
+    Logic:
+    1. Uses Canonical State Name for lookup.
+    2. Maps Component to one of three keys: 'MMER', 'EMDC', or 'Other'.
+        - 'MMER' -> Exact match.
+        - 'EMDC' -> Matches 'EMDC' or 'Erstwhile MDC'.
+        - 'Other' -> Default for everything else.
+    3. Fallback to (60, 40) if state/component not found in config.
     """
     try:
+        # 1. Get ratios for the canonical state
         state_ratios = CS_SS_RATIOS.get(state, {})
-        return state_ratios.get(component, state_ratios.get("Other", (60, 40)))
+
+        # 2. Determine the component category key
+        comp_clean = str(component).strip()
+
+        if comp_clean == "MMER":
+            comp_key = "MMER"
+        elif comp_clean in ["EMDC", "Erstwhile MDC"]:
+            comp_key = "EMDC"
+        else:
+            comp_key = "Other"
+
+        # 3. Lookup ratio: Specific Key -> Other -> Default (60, 40)
+        ratio = state_ratios.get(comp_key, state_ratios.get("Other", (60, 40)))
+
+        return ratio
+
     except Exception:
         # Graceful fallback if config is malformed
         return (60, 40)
@@ -196,7 +223,7 @@ STATE_VARIANTS = {
     "Goa": ["goa"],
     "Gujarat": ["gujarat"],
     "Haryana": ["haryana"],
-    "Himachal Pradesh": ["himachal pradesh"],
+    "Himachal Pradesh": ["himachal pradesh", 'himachal pradesh'],
     "Jammu and Kashmir": ["jammu and kashmir", "j&k", "j and k"],
     "Jharkhand": ["jharkhand"],
     "Karnataka": ["karnataka"],
@@ -231,14 +258,17 @@ def get_canonical_states():
 def normalize_state_name(raw_name: str) -> str:
     if not raw_name:
         return ""
+    
+    # Standardize the input: lowercase, strip, and swap & for 'and'
     clean_name = str(raw_name).strip().lower().replace("&", "and")
 
     for canonical, variants in STATE_VARIANTS.items():
-        if clean_name in [v.lower() for v in variants]:
+        # Standardize variants the SAME way as the input
+        standardized_variants = [v.lower().replace("&", "and").strip() for v in variants]
+        
+        if clean_name in standardized_variants:
             return canonical
 
-    # Fallback: If no match, return title-cased raw name
-    # (This handles new/unmapped states gracefully)
     return str(raw_name).strip().title()
 
 
