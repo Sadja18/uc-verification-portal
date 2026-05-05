@@ -460,6 +460,7 @@
 #         flash("Verified file not found on server.", "danger")
 
 #     return redirect(url_for("verifier.preview_results"))
+import io
 import logging
 import os
 import tempfile
@@ -481,6 +482,7 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.models import ValidationLog, VerificationRecord
+from app.routes.utils import admin_required
 from app.services.config import normalize_state_name
 from app.services.template_generator import generate_consultant_template
 from app.services.verification_engine import VerificationEngine
@@ -902,3 +904,78 @@ def download_verified_excel():
         flash("Verified file not found on server.", "danger")
 
     return redirect(url_for("verifier.preview_results"))
+
+
+@verifier.route("/admin/global-export")
+@login_required
+@admin_required
+def global_export():
+    """
+    Admin-only route to download all verified records as an Excel file.
+    Includes audit trail metadata (User, Timestamp).
+    """
+    try:
+        # Query all verified records, ordered by timestamp (newest last)
+        records = VerificationRecord.query.order_by(
+            VerificationRecord.timestamp.asc()
+        ).all()
+
+        if not records:
+            flash("No verified records found in the database.", "warning")
+            return redirect(url_for("verifier.home"))
+
+        # Convert SQLAlchemy objects to list of dicts
+        data = []
+        for rec in records:
+            # Fetch username for audit trail
+            uploader_username = "Unknown"
+            if rec.uploader:
+                uploader_username = rec.uploader.username
+
+            data.append(
+                {
+                    "Timestamp": rec.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    "Uploaded By": uploader_username,
+                    "State": rec.state_canonical,
+                    "Phase": rec.rusa_phase,
+                    "Component": rec.component,
+                    "Institution": rec.inst_name,
+                    "Project Key": rec.project_id_key,
+                    # UC Financials
+                    "UC Central Appr": rec.uc_central_appr,
+                    "UC State Appr": rec.uc_state_appr,
+                    "UC Total Appr": rec.uc_total_appr,
+                    "UC Central Released": rec.uc_central_rel,
+                    "UC State Released": rec.uc_state_rel,
+                    "UC Total Released": rec.uc_total_rel,
+                    "UC Central Utilized": rec.uc_central_util,
+                    "UC State Utilized": rec.uc_state_util,
+                    "UC Total Utilized": rec.uc_total_util,
+                }
+            )
+
+        # Create DataFrame
+        df_export = pd.DataFrame(data)
+
+        # Write to BytesIO (in-memory file)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df_export.to_excel(writer, index=False, sheet_name="Verified_UCs")
+
+        output.seek(0)
+
+        logger.info(
+            f"Global Export downloaded by Admin {current_user.username}. Rows: {len(records)}"
+        )
+
+        return send_file(
+            output,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=f"Global_Verified_UC_Export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+        )
+
+    except Exception as e:
+        logger.error(f"Global Export Failed: {e}")
+        flash("An error occurred while generating the export.", "danger")
+        return redirect(url_for("verifier.home"))
