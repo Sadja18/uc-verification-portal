@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Template{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Generate UC Template</h2>
+        <a href="{{ url_for('verifier.home') }}" class="btn btn-sm btn-outline-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show py-2">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Responsive Card Container -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+            <div class="card border-primary shadow-sm">
+                <div class="card-header bg-primary text-white py-2">
+                    <strong>Select Criteria</strong>
+                </div>
+                <div class="card-body p-3">
+                    <form action="{{ url_for('verifier.download_template') }}" method="POST">
+                        
+                        <!-- State Selection -->
+                        <div class="mb-3">
+                            <label for="state" class="form-label small fw-bold">State / UT</label>
+                            <select class="form-select form-select-sm" id="state" name="state" required>
+                                <option value="" disabled selected>Select a State...</option>
+                                {% for state in states %}
+                                    <option value="{{ state }}">{{ state }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Phase Selection -->
+                        <div class="mb-3">
+                            <label for="phase" class="form-label small fw-bold">Scheme Phase</label>
+                            <select class="form-select form-select-sm" id="phase" name="phase" required>
+                                <option value="" disabled selected>Select a Phase...</option>
+                                {% for phase in phases %}
+                                    <option value="{{ phase }}">{{ phase }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            Generate & Download Excel
+                        </button>
+
+                    </form>
+                </div>
+                <div class="card-footer text-muted small py-2">
+                    Pre-filled MPR data (gray/locked). Fill green cells with UC values.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

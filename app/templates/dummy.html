@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Dummy Preview Test{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-info">
+        <h4>️ Dummy Preview Mode</h4>
+        <p>This page confirms that the route is working. The real <code>preview.html</code> will be hooked up next.</p>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">Test Data Payload</div>
+        <div class="card-body">
+            <pre>{{ result | tojson(indent=2) }}</pre>
+        </div>
+    </div>
+    
+    <a href="{{ url_for('verifier.home') }}" class="btn btn-secondary mt-3">Back Home</a>
+</div>
+{% endblock %}

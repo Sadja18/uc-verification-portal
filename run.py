@@ -1,3 +1,6 @@
+from werkzeug.security import generate_password_hash
+import click
+
 from app import create_app, db
 from app.models import User
 import os
@@ -16,6 +19,25 @@ def init_db():
 
     db.create_all()
     print("Initialized the local SQLite database (uc_audit.db).")
+
+@app.cli.command("create-user")
+@click.argument('username')
+@click.argument('password')
+@click.option('--role', default='consultant', help='Role: consultant or admin')
+def create_user(username, password, role):
+    """CLI Command: flask create-user <username> <password> [--role admin]"""
+    if User.query.filter_by(username=username).first():
+        print(f"User '{username}' already exists.")
+        return
+    
+    new_user = User(
+        username=username,
+        password_hash=generate_password_hash(password),
+        role=role
+    )
+    db.session.add(new_user)
+    db.session.commit()
+    print(f"User '{username}' created successfully with role '{role}'.")
 
 if __name__ == "__main__":
     app.run(debug=True)

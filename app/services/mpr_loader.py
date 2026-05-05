@@ -5,7 +5,7 @@ from typing import Dict, Optional, Tuple
 
 import pandas as pd
 
-import config
+import app.services.config as config
 
 
 # --- Logging Configuration ---

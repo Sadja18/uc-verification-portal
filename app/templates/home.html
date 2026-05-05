@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}UC Verification Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">UC Verification Dashboard</h2>
+
+    <!-- System Status -->
+    <div class="alert alert-info py-2 mb-4">
+        <strong>Status:</strong> 
+        {% if status == "Loaded" %}
+            ✅ Master Data Loaded ({{ count }} projects)
+        {% else %}
+            ❌ {{ status }}
+        {% endif %}
+    </div>
+
+    <!-- Action Cards -->
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    1. Generate UC Template
+                </div>
+                <div class="card-body">
+                    <p class="card-text small">
+                        Download a pre-filled Excel template for a specific State & Phase. 
+                        Fill in green cells with UC data.
+                    </p>
+                    <a href="{{ url_for('verifier.generate_template_page') }}" 
+                        class="btn btn-sm btn-outline-primary">
+                        Go to Generator →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    2. Verify Uploaded UC
+                </div>
+                <div class="card-body">
+                    <p class="card-text small">
+                        Upload filled UC file. System validates against MPR master data.
+                    </p>
+                    <a href="{{ url_for('verifier.upload_uc_page') }}" 
+                        class="btn btn-sm btn-outline-success">
+                        Go to Verification →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

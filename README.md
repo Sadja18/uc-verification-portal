@@ -251,3 +251,71 @@ Since we have the core logic (Verification Engine and Template Generator) and th
 | **`commands.py`** | CLI tools for user management and DB setup. |
 | **`auth` Blueprint** | Login/Logout and session protection. |
 | **`verifier` Blueprint** | Upload handling, duplicate checking, and database "Commit" logic. |
+
+
+For gatekeeper flow, I was thinking of doing this:
+
+first a base.html using bootstrap 5.3 and js
+a home page
+
+then two tabs:
+1. Generate Template
+2. Verify UC details
+
+For generate template:
+1. User would select state and RUSA Phase (each is optional)
+2. Click on generate template
+3. On successful generate, download template button appears
+4. On Failed generate, contact to admin appears
+
+For Verify UC details
+1. File Upload option that only accepts .xlsx file. Use extension and magic number based validation
+2. On upload, Proceed to verify button appears.
+3. On process and error page, a preview page comes showing the rows with problems. preview page would be tabular and paginated (frontend based because data is not too heavy). And button to download discrepancy .xlsx. and ValidationLog model is updated with new entry failure status. and a button to go back to upload page
+4. On process and succes, a preview page comes showing that all data are correct. Preview page would be tabular and paginated (frontend based because data is not too heavy). And a button to submit verified data
+5. On submit click, update the VerificationRecord with latest entries. and ValidationLog model is updated with a new entry with success status.
+
+I am thinking of globally keeping the mpr_data in memory. 
+Since the MPR file is small, we can simply load it on server start. that way we would avoid any race conditions from multi user sessions
+
+Let us discuss this flow in detail and how UX, process and control flow would work. no code
+
+---
+
+yes, I like to define the structure of the "Success/Failure" preview table so we can ensure the frontend pagination handles the discrepancy flags correctly
+
+For sake of UX and business use case, I would like to have following columns:
+
+State
+RUSA Phase
+Component Name
+District
+Institution Name
+PAB No
+PAB Meeting Date
+MPR Total Amount Approved : refers to the data from the master dataframe
+MPR Total Amount Released : refers to the data from the master dataframe
+MPR Total Amount Utilised : refers to the data from the master dataframe
+MPR Central Share Approved : refers to the data from the master dataframe
+MPR Central Share Released : refers to the data from the master dataframe
+MPR Central Share Utilised : refers to the data from the master dataframe
+MPR State Share Approved : refers to the data from the master dataframe
+MPR State Share Released : refers to the data from the master dataframe
+MPR State Share Utilised : refers to the data from the master dataframe
+UC Total Amount Approved : refers to the entry made in the uploaded excel file
+UC Total Amount Released : refers to the entry made in the uploaded excel file
+UC Total Amount Utilised : refers to the entry made in the uploaded excel file
+UC Central Share Approved : refers to the entry made in the uploaded excel file
+UC Central Share Released : refers to the entry made in the uploaded excel file
+UC Central Share Utilised : refers to the entry made in the uploaded excel file
+UC State Share Approved : refers to the entry made in the uploaded excel file
+UC State Share Released : refers to the entry made in the uploaded excel file
+UC State Share Utilised : refers to the entry made in the uploaded excel file
+- Optional Column in Case of error: Discrepancy Detail: contain the new line separated values of errors. For example, the errors from verification engine are in this format: `Shortfall Detected: State released 30000000.0, but based on Central release of 60000000.0, the State owed 40000000.0. Shortfall Amount: 10000000.0 | Flow Error: Total Utilized (99997693.0) &gt; Released (90000000.0).`, then split on the pipe character, and show in separate lines.
+
+I see no use of showing project_id_key to user as it is an internal piece of logic.
+Also, for the rows where the errors are, make bg slightly red.
+
+On preview page show counts: Successfully verified rows, Rows with discrepancy. And a checkbox mentioning: `Only show the rows with discrepancies`, this would shorten the table and only show discrepant rows. 
+As you can see from the uploaded mpr_loader, template_generator, verification engine and main.py I created for testing the cli based logics, you can see that most of the work is already done. In the next message, I would share the flask codes I have written.
+Do you understand what this means? No code. revise the flow

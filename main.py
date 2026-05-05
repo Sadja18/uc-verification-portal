@@ -5,14 +5,14 @@ import traceback
 
 import pandas as pd
 
-from services.template_generator import generate_consultant_template
-from services.verification_engine import VerificationEngine
+from app.services.template_generator import generate_consultant_template
+from app.services.verification_engine import VerificationEngine
 
 # Add current directory to path to allow importing services/mpr_loader
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import sys
 
-from services.mpr_loader import (
+from app.services.mpr_loader import (
     export_duplicate_projects,
     harmonize_and_merge_mpr,
     load_pmusha_mpr,
@@ -79,8 +79,8 @@ def run_sprint_3_test(master_df):
         logger.error(f"Test Execution Failed: {e}")
         logger.debug(traceback.format_exc())
 def run_sprint1():
-    RUSA_PATH = "./data/RUSA_MPR_March.xlsx"
-    PMUSHA_PATH = "./data/PM_USHA_MPR_March.xlsx"
+    RUSA_PATH = "./data/master/RUSA_MPR_March.xlsx"
+    PMUSHA_PATH = "./data/master/PM_USHA_MPR_March.xlsx"
 
     logger.info("--- Starting UC Verification Pipeline: Sprint 1 ---")
 

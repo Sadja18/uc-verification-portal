@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Verify UC Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Verify Uploaded UC</h2>
+        <a href="{{ url_for('verifier.home') }}" class="btn btn-sm btn-outline-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show py-2">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Responsive Card Container -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+            <div class="card border-success shadow-sm">
+                <div class="card-header bg-success text-white py-2">
+                    <strong>Upload Filled Template</strong>
+                </div>
+                <div class="card-body p-3">
+                    
+                    <!-- Upload Form -->
+                    <form action="{{ url_for('verifier.process_upload') }}" method="POST" enctype="multipart/form-data">
+                        
+                        <div class="mb-3">
+                            <label for="file" class="form-label small fw-bold">Select Excel File (.xlsx)</label>
+                            <input class="form-control form-control-sm" type="file" id="file" name="file" accept=".xlsx" required>
+                            <div class="form-text small text-muted">
+                                Ensure the file was generated from the "Generate Template" page and contains filled green cells.
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            Proceed to Verify
+                        </button>
+
+                    </form>
+                </div>
+                <div class="card-footer text-muted small py-2">
+                    Validation checks: Approval Match, State Share Shortfall, and Flow Logic (Released ≥ Utilized).
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

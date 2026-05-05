@@ -7,7 +7,7 @@ import pandas as pd
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
-from config import get_ratio  # Dynamic ratio resolution[cite: 4]
+from app.services.config import get_ratio  # Dynamic ratio resolution[cite: 4]
 
 logger = logging.getLogger("VerificationEngine")
 
