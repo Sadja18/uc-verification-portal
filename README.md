@@ -1,321 +1,160 @@
-# UC Verification Exercise
-
-## Background:
-
-- Projects are approved for given State/UT and Institution under RUSA and PM-USHA during various Project Approval Board Mettings (PAB Meeting).
-- The implementing agency fills Monthyl Progress Report (MPR) for given project; combination of State/UT + RUSA Phase + Component Name + Institution Name + PAB meeting number
-- The approved amount, released amount and utilised amount are filled in each MPR under following:
-    - Central Share
-    - State Share
-    - Total Share
-- For each State/UT + Component Name: there is a fixed ratio for Central Share : State Share
-- If State Share Released entry in an MPR is less than the State Share Expected Released calculated based on ratio of Central Share: State Share for a given project; then the difference in `State Share Release Expected` - `State Share Released` is called a shortfall.
-- `Single Nodal Agency` (SNA) is the foundational model for managing `Centrally Sponsored Scheme` (CSS) funds.
-- `SNA SPARSH` (SAMAYOCHIT PRANALI EKIKRUT SHIGHRA HASTANTARAN) is an enhanced, "true Just-in-Time" (JIT) upgrade launched in January 2024
-- Some projects approved earlier in RUSA and PM-USHA were originally funded through SNA model.
-- All States/UTs were onboarded on SNA SPARSH model in phased manner with a batch of States/UTs at a time. And when all projects in a given State/UT were onboarded, the State/UT was considered that it was onboarded
-- As on January 2026, all projects are onboarded in SNA SPARSH model.
-- Utilization Certificate (UC) is sent by the State/UT for each project when the issued fund installments; also known as Mother Sanctions `MS` are exhausted.
-- In a given FY, one or more MS are issued for each of the State/UT under RUSA/PM-USHA.
-
-The UC verification exercise is to be done for the first UC provided by the State/UT just after they were onboarded on SPARSH model.
-
-This portal would allow consultants of the RUSA/PM-USHA section to do a verification to do following:
-
-- Take the UC issued after a given project was onboarded in SNA SPARSH
-- Find the values for Approved Amounts, Released Amounts, Utilised Amounts for Central Share, State Share and Total (Central Share + State Share)
-- The latest MPR would be downloaded as an excel file and would be part of portal.
-- On portal, there would be a option for user to select a State/UT and download projects UC template with following: 
-    - Pre-populated fields to come from latest MPR:
-        - State/UT
-        - Component Name
-        - RUSA Phase (RUSA 1/ RUSA 2/ PM-USHA)
-        - District
-        - Institution Name 
-        - PAB Date
-        - PAB Meeting Number
-        - Total Amount Approved
-        - Central Share Approved
-        - State Share Approved
-    - Blank fields which the user would fill after downloading:
-        - Total Amount Approved (UC)
-        - Central Share Amount Approved (UC)
-        - State Share Amount Approved (UC)
-        - Total Amount Released (UC)
-        - Central Share Amount Released (UC)
-        - State Share Amount Released (UC)
-        - Total Amount Utilised (UC)
-        - Central Share Amount Utilised (UC)
-        - State Share Amount Utilised (UC) 
-- On second user interface of portal, the user would upload the completely filled UC for a given State/UT
-- First stage of validation for amounts would be Approved(UC) >= Released(UC) >= Utilised(UC) for all three shares.
-- Second stage of validation for amounts would be:
-    - Approved (MPR) >= Approved (UC)
-    - Released (MPR) >= Released (UC)
-    - Utilised (MPR) >= Utilised (UC)
-- The preview pane would then flag discrepancy:
-    - Amount mismatch
-    - State Share shortfall
-- If there are no flags, show success and option to append the updated data to a excel file
-- If there are discrepancies, allow download as excel for internal offline review. The downloaded excel would have a new column mentioning the flags for discrepancy. If there is one or more flags in a row, that cell would have all the flags in human readable format.
-
----
-
-## Part 1
-Since the project is small and the entire verification exercise is a one time activity, I was wondering following:
-
-1. Which tech stack should I go with:
-- Django seems like an overkill
-- Google App script is an option, but the amount of boilerplate and other code to write; and lack of login flow makes my head spin
-- Flask is viable, but would need to create SQLite3 handler, and would need to discuss RBAC account managers (there are only two but still)
-
-App Script would allow me to make the site online with no server. and the appended file of validated projects would be google sheet, easier to review
-
-Other Approaches involving framework would require me to upload/append the output file to drive:
-- I would not enable drive API for this, I mean what is the benefit
-- I would use a free deployment, because the department would not release funds for a server which is not needed after 15-30 days. not gonna use GCP/Azure/AWS for this and use up my credits.
-
-2. I would download the MPR data, do fixes like name fixing etc manually, and save to the required data to whereever is needed.
-
-3. I would create a sheet/excel workbook/config file containing Central Share: State Share ratio for each State/UT + Component (the actual format depends on what tech stack to use)
-
-4. State Share Shortfall: It would be calculated as `Expected State Share Released based on ratio on CS:SS and Central Share Released in the MPR`
-
-5. Since we are talking about funds, neither rounding off is to be tolerated nor +/-1 to be allowed
-
-6. If Released(UC) >= Approved(UC), just flag it.
-
-7. Post-upload validation is to be done
-
-8. UX-wise, side by side preview pane for MPR and UC might be too much. We can have both columns in same preview table.
-
-9. There are only two Roles: Consultans (who can download and upload) and Admin. Total Number of users: 14 consultants + 2 admins
-
-10. Audit trail would be preferred if tech stack allows.
-
-11. Once the pipeline works, we can worry about compliance or security needs (which I do not think is needed for an internal one time tool)
-
-12. The excel sheet (or google sheet) containing the verified rows on successful verification should be timestamped versioned for easier roll back, and the rows themselves to have a timestamp column.
-
-13. The entire excel file for MPR for All projects (RUSA and PM_USHA combined) is at most 4000, so data manipulation can be done in memory.
-
----
-
-For released(uc) == approved(uc), there is no need for flag, only flag to be raised for the validations i gave. The ratios does not change. so a hardcoded config.py migt be better.
-
-There would be two excel files: 
-- uploaded data with timestamp, and 
-- successfully verified with timestamp
-
-Validation to save to successfully verified would be all or nothing. either the uploaded projects are all verified or none
-
-----
-
-For now I intend to only create service functions which I would run via command line. 
-
-I would add interfaces later (flask or streamlit depends)
-
----
-There are two different MPR.
-
-`RUSA MPR` having RUSA Phase values: RUSA 1 and RUSA 2
-with following columns
-- S.No
-- State
-- District
-- Months
-- Year
-- Component Name
-- RUSA Phase
-- Institution Name
-- Aishe Code
-- PAB Meeting Number
-- PAB Date
-- Central Share Approved
-
-- Central Share Released
-
-- Central Share Utilised
-
-- State Share Approved
-
-- State Share Released
-- State Share Utilised
-- Total Amount Approved
-- Total Amount Released
-- Total Amount Utilised
-- Activities that have been already undertaken in Current Month
-- Activities that have been undertaken till Previous Month
-- Activities yet to be undertaken
-- Percentage Physical Progress Total
-- Whether PM Digitally Launched Project (Yes/ No)
-- Project Inauguration status [Inaugurated/ Not Inaugurated]
-- If Inaugurated, then, by whom and when
-- Tentative Date of completion
-- Project Status
-- Whether the project is Functional[ or Lying idle/Not Functional]*
-- If the Project is completed but not functional, Please state the reason(s):
-- Benfits from the projects (Please provide details)
-- Number of students benefitted
-- Number of faculties benefitted
-- Number of research works being undertaken
-- Physical Inspection Reports (PIR)
-- PIR Uploaded (Yes/No/Not Selected)
-
-and 
-`PM-USHA MPR` corresponding to projects with RUSA Phase `PM-USHA` with following columns
-S.No
-State
-District
-Component Name
-RUSA Phase
-Institution Name
-Aishe Code
-PAB Meeting Number
-PAB Date
-Central Share Amount Approved
-Central Share Amount Released
-Central Share Amount Utilised
-State Share Amount Approved
-State Share Amount Released
-State Share Amount Utilised
-Total Amount Approved
-Total Amount Released
-Total Amount Utilised
-Physical Progress (Overall Project)(%)
-Project Status (Overall)
-Monthly Proposal Item Status (Completed)
-Monthly Proposal Item Status (Ongoing)
-Monthly Proposal Item Status (Not yet started)
-Total Monthly Proposal Item Status
-Is Focus District
-Is Aspirational District
-Is Left Wing Extremist (LWE) District
-Is Border Area District
-NAAC Accreditation Status
-Accreditation Score
-Accreditation Grade
-Accreditation Valid Until
-Year
-Month
-
-The end user flow would allow user to select 
-- one or more rusa phases : rusa 1, rusa 2, and/or pm-usha, and 
-- select one or more states/UTs, and
-- generate the template
-
-However, as you can see, the cols and name are slightly different in the two excel files.
-
-Therefore, the mpr loader would first need to load the two excel as separate dfs, do state name canonical process on both dfs, then ensure that the required columns in both dfs are similar so that pd.concat can happen, then combine dfs to single df
-
----
-
-Since we have the core logic (Verification Engine and Template Generator) and the roadmap finalized, we can now move into the **Integration Phase**. This sprint plan focuses on building the Flask "scaffolding"—the structure that holds the database, the user roles, and the service routes together.
-
----
-
-### **Sprint 5: Core Scaffolding & Integration**
-
-**Goal**: Establish the Flask environment, define the SQLite/SQLAlchemy models, and implement the "Gatekeeper" logic to prevent duplicate validations.
-
-#### **Phase 1: Environment & Extension Setup**
-*   **App Factory Pattern**: Initialize the Flask application using `create_app()` to handle extensions (SQLAlchemy, Flask-Login, Migrate) and Blueprints cleanly.
-*   **Directory Mapping**: Create a startup utility to ensure `data/master`, `data/temp`, `data/verified`, and `data/review` exist on the PythonAnywhere file system.
-*   **Database Config**: Configure the `SQLALCHEMY_DATABASE_URI` for a local `.db` file and initialize the engine.
-
-#### **Phase 2: User Management & CLI**
-*   **User Model Implementation**: Create the model with `username`, `password_hash`, `role`, and the optional fields (`email`, `first_name`, `last_name`).
-*   **RBAC Decorators**: Build custom Python decorators (e.g., `@admin_required`) to protect specific routes like "Global Export."
-*   **Flask CLI Commands**: Develop custom terminal commands:
-    *   `flask init-db`: Creates tables and default folders.
-    *   `flask create-user`: A prompted utility to add consultants or IT managers without SQL.
-
-#### **Phase 3: The "Gatekeeper" Blueprint (Verifier Integration)**
-*   **Route Logic**: Create the `/upload` route that accepts the consultant's file.
-*   **Duplicate Detection**: Before calling the service, query the `ValidationLog` table for a `Success` status matching the file's `State` and `Phase`.
-*   **Service Integration**:
-    *   If no duplicate exists, pass the file to the `VerificationEngine`.
-    *   On success, write to the `ValidationLog` and append the results to the `VerifiedRecords` table.
-    *   On failure, serve the **Locked Discrepancy Annexure**[cite: 1].
-
-#### **Phase 4: Template & Global Export Blueprints**
-*   **Template Route**: Integrate `generate_consultant_template` into a route that serves the file as a `BytesIO` object or a direct download.
-*   **The "IT Manager" Export**: Create the admin-only route that queries `VerifiedRecords`, converts it to a DataFrame, and exports the **Global Master** spreadsheet.
-
----
-
-### **Deliverables Checklist**
-| Component | Function |
-| :--- | :--- |
-| **`models.py`** | SQLite schema for Users, Logs, and Global Records. |
-| **`commands.py`** | CLI tools for user management and DB setup. |
-| **`auth` Blueprint** | Login/Logout and session protection. |
-| **`verifier` Blueprint** | Upload handling, duplicate checking, and database "Commit" logic. |
-
-
-For gatekeeper flow, I was thinking of doing this:
-
-first a base.html using bootstrap 5.3 and js
-a home page
-
-then two tabs:
-1. Generate Template
-2. Verify UC details
-
-For generate template:
-1. User would select state and RUSA Phase (each is optional)
-2. Click on generate template
-3. On successful generate, download template button appears
-4. On Failed generate, contact to admin appears
-
-For Verify UC details
-1. File Upload option that only accepts .xlsx file. Use extension and magic number based validation
-2. On upload, Proceed to verify button appears.
-3. On process and error page, a preview page comes showing the rows with problems. preview page would be tabular and paginated (frontend based because data is not too heavy). And button to download discrepancy .xlsx. and ValidationLog model is updated with new entry failure status. and a button to go back to upload page
-4. On process and succes, a preview page comes showing that all data are correct. Preview page would be tabular and paginated (frontend based because data is not too heavy). And a button to submit verified data
-5. On submit click, update the VerificationRecord with latest entries. and ValidationLog model is updated with a new entry with success status.
-
-I am thinking of globally keeping the mpr_data in memory. 
-Since the MPR file is small, we can simply load it on server start. that way we would avoid any race conditions from multi user sessions
-
-Let us discuss this flow in detail and how UX, process and control flow would work. no code
-
----
-
-yes, I like to define the structure of the "Success/Failure" preview table so we can ensure the frontend pagination handles the discrepancy flags correctly
-
-For sake of UX and business use case, I would like to have following columns:
-
-State
-RUSA Phase
-Component Name
-District
-Institution Name
-PAB No
-PAB Meeting Date
-MPR Total Amount Approved : refers to the data from the master dataframe
-MPR Total Amount Released : refers to the data from the master dataframe
-MPR Total Amount Utilised : refers to the data from the master dataframe
-MPR Central Share Approved : refers to the data from the master dataframe
-MPR Central Share Released : refers to the data from the master dataframe
-MPR Central Share Utilised : refers to the data from the master dataframe
-MPR State Share Approved : refers to the data from the master dataframe
-MPR State Share Released : refers to the data from the master dataframe
-MPR State Share Utilised : refers to the data from the master dataframe
-UC Total Amount Approved : refers to the entry made in the uploaded excel file
-UC Total Amount Released : refers to the entry made in the uploaded excel file
-UC Total Amount Utilised : refers to the entry made in the uploaded excel file
-UC Central Share Approved : refers to the entry made in the uploaded excel file
-UC Central Share Released : refers to the entry made in the uploaded excel file
-UC Central Share Utilised : refers to the entry made in the uploaded excel file
-UC State Share Approved : refers to the entry made in the uploaded excel file
-UC State Share Released : refers to the entry made in the uploaded excel file
-UC State Share Utilised : refers to the entry made in the uploaded excel file
-- Optional Column in Case of error: Discrepancy Detail: contain the new line separated values of errors. For example, the errors from verification engine are in this format: `Shortfall Detected: State released 30000000.0, but based on Central release of 60000000.0, the State owed 40000000.0. Shortfall Amount: 10000000.0 | Flow Error: Total Utilized (99997693.0) &gt; Released (90000000.0).`, then split on the pipe character, and show in separate lines.
-
-I see no use of showing project_id_key to user as it is an internal piece of logic.
-Also, for the rows where the errors are, make bg slightly red.
-
-On preview page show counts: Successfully verified rows, Rows with discrepancy. And a checkbox mentioning: `Only show the rows with discrepancies`, this would shorten the table and only show discrepant rows. 
-As you can see from the uploaded mpr_loader, template_generator, verification engine and main.py I created for testing the cli based logics, you can see that most of the work is already done. In the next message, I would share the flask codes I have written.
-Do you understand what this means? No code. revise the flow
+# UC Verification Portal
+
+A streamlined web application for validating Utilization Certificates (UCs) for **RUSA** and **PM-USHA** projects. This tool automates the verification of financial ratios, fund flow logic, and approval matches against Master Monthly Progress Reports (MPR), ensuring data integrity before final commitment.
+
+## 🚀 Key Features
+
+- **Automated Template Generation:** Downloads pre-populated Excel templates with locked MPR data and fillable UC fields.
+- **Smart Validation Engine:**
+  - Checks **State/Central Share Ratios** dynamically based on State and Component.
+  - Validates **Fund Flow Logic** (Released ≤ Approved, Utilized ≤ Released).
+  - Ensures **Approval Matches** between UC and Master MPR.
+- **Gatekeeper Logic:** Prevents duplicate successful submissions for the same State/Phase combination.
+- **Audit Trail:** Logs every upload attempt and stores verified records with user attribution.
+- **Admin Controls:** Global export of all verified records and user management.
+
+## 🛠️ Tech Stack
+
+- **Backend:** Python 3.9+, Flask, SQLAlchemy (SQLite)
+- **Data Processing:** Pandas, Openpyxl
+- **Frontend:** Jinja2, Bootstrap 5.3, DataTables.js
+- **Authentication:** Flask-Login (Role-based: Consultant/Admin)
+
+## 📂 Project Structure
+
+```text
+uc-verification-exercise/
+├── app/
+│   ├── __init__.py          # App factory, DB init, MPR loading
+│   ├── models.py            # User, ValidationLog, VerificationRecord
+│   ├── routes/
+│   │   ├── auth.py          # Login/Logout
+│   │   └── verifier.py      # Core verification routes
+│   ├── services/
+│   │   ├── config.py        # State ratios & canonicalization
+│   │   ├── mpr_loader.py    # ETL for RUSA/PM-USHA files
+│   │   ├── template_generator.py # Excel template creation
+│   │   └── verification_engine.py # Validation logic
+│   └── templates/           # HTML UI
+├── data/
+│   ├── master/              # Source MPR Excel Files
+│   ├── temp/                # Uploads
+│   ├── review/              # Discrepancy Reports
+│   └── verified/            # Clean Verified Files
+├── logs/                    # Application logs
+├── run.py                   # CLI commands & entry point
+├── requirements.txt
+└── README.md
+```
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- Python 3.9 or higher
+- pip
+
+### Steps
+
+1. **Clone the Repository**
+   ```bash
+   git clone <repository-url>
+   cd uc-verification-exercise
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Prepare Data Directory**
+   Place your source MPR files in `data/master/`:
+   - `RUSA_MPR_March.xlsx`
+   - `PM_USHA_MPR_March.xlsx`
+
+4. **Initialize Database & Folders**
+   ```bash
+   flask init-db
+   ```
+   *This creates `uc_audit.db` and necessary directories (`data/temp`, `logs`, etc.).*
+
+5. **Create Admin User**
+   ```bash
+   flask create-user admin secret123 --role admin
+   ```
+
+6. **Run the Application**
+   ```bash
+   flask run
+   ```
+   Access the portal at `http://127.0.0.1:5000`
+
+## 👤 User Guide
+
+### For Consultants
+
+1. **Login:** Use your provided username and password.
+2. **Generate Template:**
+   - Select **State/UT** and **Scheme Phase** (RUSA 1/2 or PM-USHA).
+   - Click **Generate & Download Excel**.
+   - The downloaded file contains locked gray cells (MPR data) and green fillable cells (UC data).
+3. **Fill Data:** Enter UC Approved, Released, and Utilized amounts in the green cells. *Do not modify gray cells.*
+4. **Upload & Verify:**
+   - Go to **Verify UC Details**.
+   - Upload the filled Excel file.
+   - Review the **Preview Page**:
+     - **Green Rows:** Valid data.
+     - **Red Rows:** Errors (e.g., Ratio Shortfall, Flow Logic Error).
+5. **Resolve Errors:**
+   - If errors exist, click **Download Discrepancy Report**, fix the Excel file, and re-upload.
+6. **Commit:**
+   - If no errors, click **Submit & Save to Master**. This permanently saves the data and locks the State/Phase combination from future uploads.
+
+### For Admins
+
+1. **Global Export:**
+   - Click the **📥 Global Export** link in the navbar.
+   - Downloads an Excel file containing all successfully verified records from the database, including audit metadata (Uploader, Timestamp).
+2. **User Management:**
+   - Create new consultant accounts via CLI:
+     ```bash
+     flask create-user consultant1 pass123 --role consultant
+     ```
+
+## 🔍 Validation Rules
+
+The engine enforces the following rules per row:
+
+1. **Identity Check:** Project Key must exist in Master MPR.
+2. **Ratio Shortfall:**
+   - Calculates `Expected State Release` based on `Central Release` and configured `CS:SS Ratio`.
+   - Flags if `Actual State Release < Expected State Release`.
+3. **Approval Match:**
+   - `UC Central Approved + UC State Approved` must equal `Master MPR Total Approved`.
+4. **Flow Logic:**
+   - `Total Released ≤ Total Approved`
+   - `Total Utilized ≤ Total Released`
+
+## 📝 Configuration
+
+### State Ratios (`app/services/config.py`)
+Ratios are defined in the `CS_SS_RATIOS` dictionary. Example:
+```python
+"Uttar Pradesh": {
+    "Other": (60, 40),  # 60% Central, 40% State
+    "MMER": (100, 0),   # 100% Central
+}
+```
+*If a state/component combination is missing, it defaults to (60, 40).*
+
+### State Canonicalization
+The `STATE_VARIANTS` dictionary maps messy input names (e.g., "U.P.", "Orissa") to canonical names (e.g., "Uttar Pradesh", "Odisha") for consistent database storage.
+
+## 🐞 Troubleshooting
+
+- **"Master DataFrame is empty":** Ensure `RUSA_MPR_March.xlsx` and `PM_USHA_MPR_March.xlsx` exist in `data/master/` and contain a sheet named `data`.
+- **"Upload Rejected: Already Verified":** The State/Phase combination was previously committed. Only Admins can override this by manually clearing the `ValidationLog` (not recommended for audit integrity).
+- **"Ratio Configuration Missing":** Add the missing State/Component ratio to `app/services/config.py`.
+
+## 📄 License
+
+[LICENSE](LICENSE)
